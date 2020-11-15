@@ -9,14 +9,14 @@ Job dispatching and executing library written in Clojure. Submit jobs that will 
 
 * dispatch jobs to queues
 * jobs are self-contained and given by
-- **ts** timestamp to execute (unix epoch)
-- **queue** to use
-- **λ** function with no parameters
+  - **ts** timestamp to execute (unix epoch)
+  - **queue** to use
+  - **λ** function with no parameters
 * mark failed jobs
 * rerun failed jobs 
 
 * Named queues
-- number of jobs that are executed in parallel configurable per queue
-- pause/resume queue
+  - number of jobs that are executed in parallel configurable per queue
+  - pause/resume queue
 
 
