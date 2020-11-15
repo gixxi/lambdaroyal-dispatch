@@ -34,4 +34,8 @@ If job A gets dispatched at dispatch time (DT) DT1 for execution time (ET) ET1 a
 
 > DT1 < DT2 < now && ET1 > ET2
 
-then there is no guarantee using a fixed-bound thread pool that job B gets executed before job A since there is the possibility that the number of jobs that gets dispatched after job A and before job B exceeds the number of remaining threads in the bounded-size thread pool
+then there is no guarantee using a fixed-bound thread pool that job B gets executed before job A since there is the possibility that the number of jobs that gets dispatched after job A and before job B exceeds the number of remaining threads in the bounded-size thread pool. **ENSURES CORRECT EXECUTION ORDER**
+
+### Concurrent jobs in one queue
+
+One could use *core/async* channels with limited buffer size or thread-pools with the size as per the desired level of parallelism. Or one could use a semaphore which is exactly what lambdaroyal-dispatch does. **HIDES BOILERPLATE**
