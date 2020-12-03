@@ -34,7 +34,6 @@
   :on-start :: job -> nil
   :frequency (default 1000) using this frequency we poll for jobs to execute
   :verbose (default false)"
-  on-start
   [& params]
   (let [{:keys [frequency verbose] 
          :or {frequency 1000 verbose false} :as params} (if params (apply hash-map params) {})
@@ -67,7 +66,7 @@
                                                                (dosync
                                                                 (let [pending-seq (subseq @queue < [(System/currentTimeMillis) nil nil])]
                                                                   (doseq [[key job] pending-seq]
-                                                                    (commute queue dissoc key))
+                                                                    (alter queue dissoc key))
                                                                   pending-seq)))]
                                          (if-not (empty? pending-jobs)
                                            (do
@@ -80,11 +79,14 @@
                                          (throw t)))))
 
         ;;adds a ref watch to a queue, which is a ref to a sorted-map
+        unique-watchers (atom #{})
         queue-ref-watcher (fn  
                             [queue-name queue]
                             (add-watch queue :queue-watch (fn [key _ old-state new-state]
                                                             (if (empty? old-state)
                                                               (future
+                                                                (if (contains? @unique-watchers queue-name) (throw (IllegalStateException. "Cannot register second ref-watcher on queue [%a]" queue-name)))
+                                                                (swap! unique-watchers conj queue-name)
                                                                 (if verbose (println (format "[Dispatcher] started worker for queue [%s]" queue-name)))
                                                                 (loop []
                                                                   (if (-> stopped deref false?)
@@ -119,22 +121,3 @@
       (pause [this queue] nil)
       (resume [this queue] nil)
       (stop [this] (reset! stopped true)))))
-
-(let [jobs (atom [])
-      d (dispatcher :verbose false :frequency 200
-                    ;;:on-failed (fn [job] (println (format "[Dispatcher] job [%s] failed. execution (ms) [%s] error message [%s]" (:id job) (- (:stopped-at job) (:started-at job)) (:error-message job))))
-                    :on-done (fn [job] (do
-                                         (swap! jobs conj job))))
-      res (atom [])]
-  (doseq [x (range 1000000)] 
-    (dispatch d (rand-int 1) 
-              (+ (System/currentTimeMillis) (rand-int 100))
-              (fn [] 
-                (io!
-                 (if (= (mod x 2) 1)
-                   (throw (Exception. "foo"))
-                   (swap! res conj x))))))
-  (Thread/sleep 4000)
-  (stop d)
-  {:count (count @res) :distinct (-> @res distinct count) :duplicates (count (filter (fn [[k xs]] (> (count xs) 1)) (group-by identity @res)))
-   :dupplicates' (take 10 (filter (fn [[k xs]] (> (count xs) 1)) (group-by :id @jobs)))})

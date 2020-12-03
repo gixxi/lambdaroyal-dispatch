@@ -15,10 +15,63 @@ Job dispatching and executing library written in Clojure. Submit jobs that will 
 * mark failed jobs
 * rerun failed jobs 
 
-* Named queues
-  - number of jobs that are executed in parallel configurable per queue
-  - pause/resume queue
-  - accepts jobs not ordered by timestamp to execute
+# Usage
+
+Creating a dispatcher
+
+```clojure
+(require '[lambdaroyal.dispatch.core :refer :all])
+
+(def d (dispatcher))
+
+```
+
+Creating a dispatcher with custom parameters
+
+```clojure
+(require '[lambdaroyal.dispatch.core :refer :all])
+
+(def d (dispatcher
+         :verbose true
+         :frequency 100
+         :on-failed (fn [job] (println (format "job [%s] failed. execution (ms) [%s] error message [%s]" (:id job) (- (:stopped-at job) (:started-at job)) (:error-message job))))
+         :on-done (fn [job] (println (format "jobs [%s] done")))
+         :on-start (fn [job] (println (format "jobs [%s] started")))))
+
+```
+
+Dispatch a job
+
+```Clojure
+(dispatch d
+          "Datasink" ;; Queuename
+          (+ (System/currentTimeMillis) 1000) ;; execute in one minute
+          ;; every second job fails
+          (fn [] 
+            (swap! res conj x)))
+```
+
+# Constraints
+
+## Queue Name
+
+The name of a queue is an arbitrary scalar, e.g. one of the following
+
+* String literals "Foo"
+* Numbers like 1 or 5.4
+* Keywords like :Bar
+
+## Execution order of jobs
+
+Assume two Jobs A,B on Queue Q. It is ensured that Job A starts and finishes before B whene the execution time of A is below the execution time of B.
+
+If Two jobs A,B on Queue have the same execution time, then the execution order of both is non-deterministic.
+
+## Side-effects
+
+The integrity of the queues is guaranteed using software transactional memory. Pending Jobs are executed in bulk after the queues where modified by the dispatcher. 
+
+Side-effects are allowed in job lambdas and lifecycle methods like on *on-stop*.
 
 # Rationale 
 
