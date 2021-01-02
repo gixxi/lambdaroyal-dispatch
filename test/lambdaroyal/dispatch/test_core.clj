@@ -56,9 +56,6 @@
 (dispatch d
           "Datasink" ;; Queuename
           (+ (System/currentTimeMillis) 1000) ;; execute in one minute
-                     ;; every second job fails
-                     (fn [] 
-                       (io!
-                        (if (= (mod x 2) 1)
-                          (throw (Exception. "foo"))
-                          (swap! res conj x)))))
+          ;; every second job fails
+          (fn [] 
+            (swap! res conj x)))
