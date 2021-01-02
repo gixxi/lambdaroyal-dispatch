@@ -53,10 +53,9 @@ Dispatch a job
 ```Clojure
 (dispatch d
           "Datasink" ;; Queuename
-          (+ (System/currentTimeMillis) 1000) ;; execute in one minute
-          ;; every second job fails
+          (+ (System/currentTimeMillis) 1000) ;; execute in future - one second ahead
           (fn [] 
-            (swap! res conj x)))
+            (println "job done")))
 ```
 
 # Testing
